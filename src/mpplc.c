@@ -15,6 +15,17 @@ char *ttypestr[NUMOFTTYPE + 1] = {
         "", "", "", "integer", "char", "boolean", "array", "procedure"
 };
 
+FILE *output;
+
+int init_output() {
+    output = fopen("foo.csl", "w");
+    if(output == NULL) {
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
 int main(int nc, char *np[]) {
 
     if (nc < 2) {
@@ -22,8 +33,15 @@ int main(int nc, char *np[]) {
         return 0;
     }
 
+    // 入力ファイル初期化
     if (init_scan(np[1]) < 0) {
         printf("File %s can not open.\n", np[1]);
+        return 0;
+    }
+
+    // 出力ファイル初期化
+    if (init_output() < 0) {
+        printf("Output file can not open.\n");
         return 0;
     }
 
@@ -37,6 +55,7 @@ int main(int nc, char *np[]) {
         print_idtab();
     }
     end_scan();
+    fclose(output);
 
     return 0;
 }
@@ -50,5 +69,6 @@ void error_and_exit(char *mes, int linenum) {
     printf("\nERROR: %s\n", mes);
     printf("line: %d\n", linenum);
     end_scan();
+    fclose(output);
     exit(0);
 }
