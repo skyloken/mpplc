@@ -89,6 +89,11 @@ int token_to_ttype(int token);
 
 int is_standard_type(int type);
 
+// 出力ファイル書き込み
+void write(char *str) {
+    fprintf(output, "%s", str);
+}
+
 /* プログラム */
 int parse_program() {
     if (token != TPROGRAM) return (error("Keyword 'program' is not found"));
@@ -345,6 +350,12 @@ int condition_statement() {
     if (token != TIF) return error("Keyword 'if' is not found");
     token = scan();
     if ((type = expression()) == ERROR) return ERROR;
+
+    /* expression()が条件式のコードを生成してくれていると仮定できるので */
+    /* 新たなラベル L0001 を確保 */
+
+
+
     if(type != TPBOOL) return error("Conditional expression of condition statement must be boolean");
     if (token != TTHEN) return error("Keyword 'then' is not found");
     token = scan();
