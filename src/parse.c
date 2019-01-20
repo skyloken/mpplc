@@ -15,12 +15,12 @@ int element_type;
 int ispara;
 int is_local;
 int is_call;
+int is_opr;
 int ele_type;
 struct PARA *f_para;
 
 int label;
 int break_label;
-int else_label;
 
 /* プロトタイプ宣言 */
 int block();
@@ -112,6 +112,7 @@ int parse_program() {
     if (block() == ERROR) return (ERROR);
     if (token != TDOT) return (error("Period is not found at the end of program"));
     token = scan();
+    output_strlb();
     fprintf(output, "\tEND\n");
     return (NORMAL);
 }
@@ -251,7 +252,15 @@ int subprogram_declaration() {
         if (variable_declaration() == ERROR) return ERROR;
     }
 
-    // TODO: generate parameter
+    fprintf(output, "$%s\n", procname);
+    struct PARA *p = get_procedure_parameter(procname);
+    if(p != NULL) {
+        fprintf(output, "\tPOP\tgr2\n");
+        for(; p != NULL; p = p->nextparap) {
+            fprintf(output, "\tPOP\tgr1\n\tST\tgr1,$%s%%%s\n", p->name, procname);
+        }
+        fprintf(output, "\tPUSH\t0,gr2\n");
+    }
 
     if (compound_statement() == ERROR) return ERROR;
     fprintf(output, "\tRET\n");
@@ -471,18 +480,39 @@ int call_statement() {
     return NORMAL;
 }
 
-/* TODO: 式の並び */
+/* 式の並び */
 int expressions() {
     int type;
+    int first;
+    first = token;
+    is_opr = 0;
+
     if ((type = expression()) == ERROR) return ERROR;
     if (f_para == NULL) return error("Number of procedure arguments do not match");
     if (type != f_para->ttype) return error("Procedure argument types do not match");
+
+    if (first == TNAME && is_opr == 0) {
+        fprintf(output, "\tPUSH\t0,gr1\n");
+    } else {
+        fprintf(output, "\tLAD\tgr2,L%04d\n\tST\tgr1,0,gr2\n\tPUSH\t0,gr2\n", label);
+        register_strlb("");
+    }
+
     while (token == TCOMMA) {
         if (f_para->nextparap == NULL) return error("Number of procedure arguments do not match");
         f_para = f_para->nextparap;
         token = scan();
+        first = token;
+        is_opr = 0;
         if ((type = expression()) == ERROR) return ERROR;
         if (type != f_para->ttype) return error("Procedure argument types do not match");
+
+        if (first == TNAME && is_opr == 0) {
+            fprintf(output, "\tPUSH\t0,gr1\n");
+        } else {
+            fprintf(output, "\tLAD\tgr2,L%04d\n\tST\tgr1,0,gr2\n\tPUSH\t0,gr2\n", label);
+            // register_strlb("");
+        }
     }
     if (f_para->nextparap != NULL) return error("Number of procedure arguments do not match");
     return NORMAL;
@@ -565,6 +595,7 @@ int expression() {
            token == TGREQ) {
         int type1 = type, type2;
         int opr = token;
+        is_opr = 1;
         fprintf(output, "\tPUSH\t0,gr1\n");
         if (relational_operator() == ERROR) return ERROR;
         if ((type2 = simple_expression()) == ERROR) return ERROR;
@@ -620,6 +651,7 @@ int simple_expression() {
     int is_minus = 0;
     if (token == TPLUS || token == TMINUS) {
         is_right_ope = 1;
+        is_opr = 1;
         if (token == TMINUS) is_minus = 1;
         token = scan();
     }
@@ -631,7 +663,7 @@ int simple_expression() {
     }
     while (token == TPLUS || token == TMINUS || token == TOR) {
         int type1 = type, type2, opr = token;
-
+        is_opr = 1;
         fprintf(output, "\tPUSH\t0,gr1\n");
         if (additive_operator() == ERROR) return ERROR;
         if ((type2 = term()) == ERROR) return ERROR;
@@ -672,6 +704,7 @@ int term() {
     if ((type = factor()) == ERROR) return (ERROR);
     while (token == TSTAR || token == TAND || token == TDIV) {
         int type1 = type, type2, opr = token;
+        is_opr = 1;
         fprintf(output, "\tPUSH\t0,gr1\n");
         if (multiplicative_operator() == ERROR) return (ERROR);
         if ((type2 = factor()) == ERROR) return (ERROR);
@@ -706,12 +739,15 @@ int term() {
     return type;
 }
 
-/* TODO: 因子 */
+/* 因子 */
 int factor() {
     int type;
     switch (token) {
         case TNAME:
             if ((type = variable()) == ERROR) return ERROR;
+            if (!(ispara && (token == TCOMMA || token == TRPAREN) && !is_opr)) {
+                fprintf(output, "\tLD\tgr1,0,gr1\n");
+            }
             break;
         case TNUMBER:
         case TFALSE:
@@ -720,19 +756,25 @@ int factor() {
             if ((type = constant()) == ERROR) return ERROR;
             break;
         case TLPAREN:
+            is_opr = 1;
             token = scan();
             if ((type = expression()) == ERROR) return ERROR;
             if (token != TRPAREN) return error("Symbol ')' is not found");
             token = scan();
             break;
         case TNOT:
+            is_opr = 1;
             token = scan();
             if ((type = factor()) == ERROR) return ERROR;
             if (type != TPBOOL) return error("Operand type of 'not' must be boolean");
+            fprintf(output, "\tCPA\tgr1,gr0\n\tJZE\tL%04d\n\tLD\tgr1,gr0\n\tJUMP\tL%04d\nL%04d\n\tLAD\tgr1,1\nL%04d\n",
+                    label, label + 1, label, label + 1);
+            label = label + 2;
             break;
         case TINTEGER:
         case TBOOLEAN:
         case TCHAR:
+            is_opr = 1;
             type = token_to_ttype(token);
             if (standard_type() == ERROR) return ERROR;
             if (token != TLPAREN) return error("Symbol '(' is not found");
@@ -740,6 +782,63 @@ int factor() {
             int ex_type;
             if ((ex_type = expression()) == ERROR) return ERROR;
             if (is_standard_type(ex_type) == 0) return error("Type of cast expression must be standard type");
+
+            switch (ex_type) {
+                case TPINT:
+                    switch (type) {
+                        case TPINT:
+                            // Nothing
+                            break;
+                        case TPCHAR:
+                            fprintf(output, "\tLAD\tgr2,127\n\tAND\tgr1,gr2\n");
+                            break;
+                        case TPBOOL:
+                            fprintf(output, "\tCPA\tgr1,gr0\n\tJZE\tL%04d\n\tLAD\tgr1,1\nL%04d\n", label, label);
+                            label++;
+                            break;
+                        default:
+                            // not-reach
+                            exit(EXIT_FAILURE);
+                    }
+                    break;
+                case TPCHAR:
+                    switch (type) {
+                        case TPINT:
+                            // Nothing
+                            break;
+                        case TPCHAR:
+                            // Nothing
+                            break;
+                        case TPBOOL:
+                            fprintf(output, "\tCPA\tgr1,gr0\n\tJZE\tL%04d\n\tLAD\tgr1,1\nL%04d\n", label, label);
+                            label++;
+                            break;
+                        default:
+                            // not-reach
+                            exit(EXIT_FAILURE);
+                    }
+                    break;
+                case TPBOOL:
+                    switch (type) {
+                        case TPINT:
+                            // Nothing
+                            break;
+                        case TPCHAR:
+                            fprintf(output, "\tLAD\tgr2,127\n\tAND\tgr1,gr2\n");
+                            break;
+                        case TPBOOL:
+                            // Nothing
+                            break;
+                        default:
+                            // not-reach
+                            exit(EXIT_FAILURE);
+                    }
+                    break;
+                default:
+                    // not-reach
+                    exit(EXIT_FAILURE);
+            }
+
             if (token != TRPAREN) return error("Symbol ')' is not found");
             token = scan();
             break;
@@ -749,22 +848,29 @@ int factor() {
     return type;
 }
 
-/* TODO: 定数 */
+/* 定数 */
 int constant() {
     int type;
     if (token != TNUMBER && token != TFALSE && token != TTRUE && token != TSTRING)
         return error("Number or Keyword 'false' or 'true' or String is not found");
     switch (token) {
         case TNUMBER:
+            fprintf(output, "\tLAD\tgr1,%d\n", num_attr);
             type = TPINT;
             break;
         case TFALSE:
         case TTRUE:
+            if (token == TFALSE) {
+                fprintf(output, "\tLAD\tgr1,0\n");
+            } else {
+                fprintf(output, "\tLAD\tgr1,1\n");
+            }
             type = TPBOOL;
             break;
         case TSTRING:
-            type = TPCHAR;
             if (strlen(string_attr) > 1) return error("Length of char type string must be 1");
+            fprintf(output, "\tLAD\tgr1,%d\n", string_attr[0]);
+            type = TPCHAR;
             break;
     }
     token = scan();
@@ -797,9 +903,12 @@ int relational_operator() {
     return NORMAL;
 }
 
-/* TODO: 入力文 */
+/* 入力文 */
 int input_statement() {
     int type;
+    int is_readln = 0;
+
+    if (token == TREADLN) is_readln = 1;
     if (token != TREAD && token != TREADLN)
         return error("Keyword 'read' or 'readln' is not found");
     token = scan();
@@ -808,6 +917,13 @@ int input_statement() {
         if ((type = variable()) == ERROR) return ERROR;
         if (!(type == TPINT || type == TPCHAR))
             return error("Type of variable of input statement must be integer or char");
+
+        if (type == TPINT) {
+            fprintf(output, "\tCALL\tREADINT\n");
+        } else {
+            fprintf(output, "\tCALL\tREADCHAR\n");
+        }
+
         while (token == TCOMMA) {
             token = scan();
             if ((type = variable()) == ERROR) return ERROR;
@@ -816,13 +932,17 @@ int input_statement() {
         }
         if (token != TRPAREN)
             return error("Keyword ')' is not found");
+        if (is_readln) fprintf(output, "\tCALL\tREADLINE\n");
         token = scan();
     }
     return NORMAL;
 }
 
-/* TODO: 出力文 */
+/* 出力文 */
 int output_statement() {
+    int is_writeln = 0;
+
+    if (token == TWRITELN) is_writeln = 1;
     if (token != TWRITE && token != TWRITELN)
         return error("Keyword 'write' or 'writeln' is not found");
     token = scan();
@@ -837,32 +957,44 @@ int output_statement() {
             return error("Symbol ')' is not found");
         token = scan();
     }
+    if (is_writeln) {
+        fprintf(output, "\tCALL\tWRITELINE\n");
+    }
     return NORMAL;
 }
 
-/* TODO: 出力指定 */
+/* 出力指定 */
 int output_format() {
     int type;
-    if (token == TSTRING) {
-        if (strlen(string_attr) > 1) {
-            token = scan();
-        } else {
-            /* 文字列の長さが1の場合は式から生成される定数の一つである"文字列"とする. */
-            if ((type = expression()) == ERROR) return ERROR;
-            if (!is_standard_type(type)) return error("Type of output format must be standard type");
-            if (token == TCOLON) {
-                token = scan();
-                if (token != TNUMBER) return error("Number is not found");
-                token = scan();
-            }
-        }
+    if (token == TSTRING && strlen(string_attr) > 1) {
+        fprintf(output, "\tLAD\tgr1,L%04d\n\tLD\tgr2,gr0\n\tCALL\tWRITESTR\n", label);
+        register_strlb(string_attr);
+        token = scan();
     } else {
+        /* 文字列の長さが1の場合は式から生成される定数の一つである"文字列"とする. */
         if ((type = expression()) == ERROR) return ERROR;
         if (!is_standard_type(type)) return error("Type of output format must be standard type");
         if (token == TCOLON) {
             token = scan();
             if (token != TNUMBER) return error("Number is not found");
+            fprintf(output, "\tLAD\tgr2,%d\n", num_attr);
             token = scan();
+        } else {
+            fprintf(output, "\tLD\tgr2,gr0\n");
+        }
+        switch(type) {
+            case TPINT:
+                fprintf(output, "\tCALL\tWRITEINT\n");
+                break;
+            case TPCHAR:
+                fprintf(output, "\tCALL\tWRITECHAR\n");
+                break;
+            case TPBOOL:
+                fprintf(output, "\tCALL\tWRITEBOOL\n");
+                break;
+            default:
+                // not-reach
+                exit(EXIT_FAILURE);
         }
     }
     return NORMAL;

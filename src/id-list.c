@@ -1,10 +1,12 @@
 ﻿#include "mpplc.h"
 
 struct ID *idroot; /* Pointers to root of global & local symbol tables */
+struct STRLB *strlbroot;
 
 /* Initialise the table */
 void init_idtab() {
     idroot = NULL;
+    strlbroot = NULL;
 }
 
 /* 参照行を末尾に追加 */
@@ -164,6 +166,11 @@ void register_type_to_name(int ttype, int array_size, int element_type) {
                 if (p->ispara) error_and_exit("Formal parameters type must be standard type", p->deflinenum);
                 p->itp->arraysize = array_size;
                 p->itp->element_type = element_type;
+                fprintf(output, "$%s\tDS\t%d\n", p->name, array_size);
+            } else if (p->ispara || p->procname != NULL) {
+                fprintf(output, "$%s%%%s\tDC\t0\n", p->name, p->procname);
+            } else if (ttype != TPPROC) {
+                fprintf(output, "$%s\tDC\t0\n", p->name);
             }
         }
     }
@@ -242,12 +249,26 @@ void register_procedure_parameter(char *procname) {
                     return;
                 }
                 para->ttype = p->itp->ttype;
+                para->name = p->name;
                 para->nextparap = procp->iparap;
                 procp->iparap = para;
 
             }
         }
     }
+}
+
+/* 副プログラムの仮引数リストの先頭ポインタを取得 */
+struct PARA *get_procedure_parameter(char *procname) {
+    struct ID *p;
+
+    for (p = idroot; p != NULL; p = p->nextp) {
+        if (strcmp(p->name, procname) == 0) {
+            return p->iparap;
+        }
+    }
+
+    return NULL;
 }
 
 /* Output the registered data */
@@ -303,5 +324,37 @@ void print_idtab() {
         printf("\n");
         p->is_output = 1;
 
+    }
+}
+
+void register_strlb(char *string) {    /* Register string and its label */
+    struct STRLB *p, *q;
+
+    if ((p = (struct STRLB *) malloc(sizeof(struct STRLB))) == NULL) {
+        printf("can not malloc in register_strlb\n");
+        exit(0);
+    }
+    p->label = label++;
+    strcpy(p->string, string);
+    p->nextp = NULL;
+    if (strlbroot == NULL) {
+        strlbroot = p;
+    } else {
+        for (q = strlbroot; q->nextp != NULL; q = q->nextp) {
+            // Nothing
+        }
+        q->nextp = p;
+    }
+}
+
+void output_strlb() {    /* Output registerd string and its label (Output DC-statement) */
+    struct STRLB *p;
+
+    for (p = strlbroot; p != NULL; p = p->nextp) {
+        if (strlen(p->string) == 0) {
+            fprintf(output, "L%04d\tDC\t0\n", p->label);
+        } else {
+            fprintf(output, "L%04d\tDC\t'%s'\n", p->label, p->string);
+        }
     }
 }

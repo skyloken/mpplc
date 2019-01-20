@@ -112,7 +112,14 @@ struct LINE {
 
 struct PARA {
     int ttype;
+    char *name;
     struct PARA *nextparap;
+};
+
+struct STRLB {
+    int label;
+    char string[MAXSTRSIZE];
+    struct STRLB *nextp;
 };
 
 extern int error(char *mes);
@@ -133,7 +140,6 @@ extern int ele_type;
 extern struct PARA *f_para;
 extern int label;
 extern int break_label;
-extern int else_label;
 
 /* id-list.c */
 extern void init_idtab();
@@ -141,7 +147,10 @@ extern void register_name(char *name, char *procname, int deflinenum, int ispara
 extern void register_type_to_name(int ttype, int array_size, int element_type);
 extern int register_reflinenum(char *name, char *procname, int reflinenum);
 extern void register_procedure_parameter(char *procname);
+extern struct PARA *get_procedure_parameter(char *procname);
 extern void print_idtab();
+extern void register_strlb(char *string);
+extern void output_strlb();
 
 /* main.c */
 extern char *tokenstr[NUMOFTOKEN + 1];
