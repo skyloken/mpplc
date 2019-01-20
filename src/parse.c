@@ -113,6 +113,7 @@ int parse_program() {
     if (token != TDOT) return (error("Period is not found at the end of program"));
     token = scan();
     output_strlb();
+    output_library();
     fprintf(output, "\tEND\n");
     return (NORMAL);
 }
@@ -254,9 +255,9 @@ int subprogram_declaration() {
 
     fprintf(output, "$%s\n", procname);
     struct PARA *p = get_procedure_parameter(procname);
-    if(p != NULL) {
+    if (p != NULL) {
         fprintf(output, "\tPOP\tgr2\n");
-        for(; p != NULL; p = p->nextparap) {
+        for (; p != NULL; p = p->nextparap) {
             fprintf(output, "\tPOP\tgr1\n\tST\tgr1,$%s%%%s\n", p->name, procname);
         }
         fprintf(output, "\tPUSH\t0,gr2\n");
@@ -982,7 +983,7 @@ int output_format() {
         } else {
             fprintf(output, "\tLD\tgr2,gr0\n");
         }
-        switch(type) {
+        switch (type) {
             case TPINT:
                 fprintf(output, "\tCALL\tWRITEINT\n");
                 break;

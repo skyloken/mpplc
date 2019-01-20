@@ -358,3 +358,42 @@ void output_strlb() {    /* Output registerd string and its label (Output DC-sta
         }
     }
 }
+
+void output_library(void) {    /* Output library for CASLII */
+    fprintf(output, CASLII_EOVF);
+    fprintf(output, CASLII_EOVF1);
+    fprintf(output, CASLII_E0DIV);
+    fprintf(output, CASLII_E0DIV1);
+    fprintf(output, CASLII_EROV);
+    fprintf(output, CASLII_EROV1);
+    fprintf(output, CASLII_WRITECHAR);
+    fprintf(output, CASLII_WRITESTR);
+    fprintf(output, CASLII_BOVFCHECK);
+    fprintf(output, CASLII_BOVFLEVEL);
+    fprintf(output, CASLII_WRITEINT);
+    fprintf(output, CASLII_MMINT);
+    fprintf(output, CASLII_WRITEBOOL);
+    fprintf(output, CASLII_WBTRUE);
+    fprintf(output, CASLII_WBFALSE);
+    fprintf(output, CASLII_WRITELINE);
+    fprintf(output, CASLII_FLUSH);
+    fprintf(output, CASLII_READCHAR);
+    fprintf(output, CASLII_READINT);
+    fprintf(output, CASLII_READLINE);
+    fprintf(output, CASLII_ONE);
+    fprintf(output, CASLII_SIX);
+    fprintf(output, CASLII_TEN);
+    fprintf(output, CASLII_SPACE);
+    fprintf(output, CASLII_MINUS);
+    fprintf(output, CASLII_TAB);
+    fprintf(output, CASLII_ZERO);
+    fprintf(output, CASLII_NINE);
+    fprintf(output, CASLII_NEWLINE);
+    fprintf(output, CASLII_INTBUF);
+    fprintf(output, CASLII_OBUFSIZE);
+    fprintf(output, CASLII_IBUFSIZE);
+    fprintf(output, CASLII_INP);
+    fprintf(output, CASLII_OBUF);
+    fprintf(output, CASLII_IBUF);
+    fprintf(output, CASLII_RPBBUF);
+}
