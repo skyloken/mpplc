@@ -131,6 +131,9 @@ extern int parse_program();
 extern int token;
 extern int ele_type;
 extern struct PARA *f_para;
+extern int label;
+extern int break_label;
+extern int else_label;
 
 /* id-list.c */
 extern void init_idtab();
