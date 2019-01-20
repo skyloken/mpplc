@@ -19,7 +19,7 @@ FILE *output;
 
 int init_output() {
     output = fopen("foo.csl", "w");
-    if(output == NULL) {
+    if (output == NULL) {
         return -1;
     } else {
         return 0;

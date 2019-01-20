@@ -146,6 +146,8 @@ extern int ele_type;
 extern struct PARA *f_para;
 extern int label;
 extern int break_label;
+extern int is_local;
+extern int iscallpara;
 
 /* id-list.c */
 extern void init_idtab();

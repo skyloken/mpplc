@@ -217,6 +217,19 @@ int register_reflinenum(char *name, char *procname, int reflinenum) {
                 error_and_exit("Recursive call is impossible", reflinenum);
             f_para = p_tmp->iparap;
         }
+        if (p_tmp->itp->ttype != TPPROC) {
+            fprintf(output, "\t");
+            if (!is_local || !(p_tmp->ispara)) {
+                fprintf(output, "LAD");
+            } else {
+                fprintf(output, "LD");
+            }
+            fprintf(output, "\tgr1,$%s", p_tmp->name);
+            if (p_tmp->procname != NULL) {
+                fprintf(output, "%%%s", p_tmp->procname);
+            }
+            fprintf(output, "\n");
+        }
     } else {
         // 名前の未定義
         error_and_exit("Undefined name", reflinenum);

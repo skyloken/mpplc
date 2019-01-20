@@ -12,14 +12,15 @@ int linenum;
 int ttype;
 int array_size;
 int element_type;
-int ispara;
-int is_local;
-int is_call;
-int is_opr;
+int ispara = 0;
+int iscallpara = 0;
+int is_local = 0;
+int is_call = 0;
+int is_opr = 0;
 int ele_type;
 struct PARA *f_para;
 
-int label;
+int label = 1;
 int break_label;
 
 /* プロトタイプ宣言 */
@@ -95,7 +96,7 @@ int is_standard_type(int type);
 
 /* プログラム */
 int parse_program() {
-    label = 1;
+
     if (token != TPROGRAM) return (error("Keyword 'program' is not found"));
     token = scan();
     if (token != TNAME) return (error("Program name is not found"));
@@ -138,7 +139,6 @@ int block() {
 
 /* 変数宣言部 */
 int variable_declaration() {
-    ispara = 0;
     if (token != TVAR) return (error("Keyword 'var' is not found"));
     token = scan();
     if (variable_names() == ERROR) return ERROR;
@@ -235,7 +235,7 @@ int array_type() {
     return NORMAL;
 }
 
-/* TODO: 副プログラム宣言 */
+/* 副プログラム宣言 */
 int subprogram_declaration() {
     is_local = 1;
     if (token != TPROCEDURE) return error("Keyword 'procedure' is not found");
@@ -311,6 +311,7 @@ int formal_parameters() {
     }
     if (token != TRPAREN) return error("Symbol '(' is not found");
     token = scan();
+    ispara = 0;
     return NORMAL;
 }
 
@@ -383,9 +384,6 @@ int condition_statement() {
     if ((type = expression()) == ERROR) return ERROR;
     if (type != TPBOOL) return error("Conditional expression of condition statement must be boolean");
 
-    /* expression()が条件式のコードを生成してくれていると仮定できるので */
-    /* 新たなラベルL0001を確保して以下を生成 */
-    // fprintf(output, "\tPOP\tgr1");
     label1 = label++;
     fprintf(output, "\tCPA\tgr1,gr0");
     fprintf(output, "\tJZE\tL%04d", label1);
@@ -394,11 +392,8 @@ int condition_statement() {
     token = scan();
     if (statement() == ERROR) return ERROR;
 
-    /* 同様にstatement()が真の場合の文のコードを生成してくれると仮定できる */
-
     if (token == TELSE) {
 
-        /* 新たなラベルL0002を確保して以下を生成 */
         label2 = label++;
         fprintf(output, "\tJUMP\t%04d", label2);
         fprintf(output, "L%04d", label1);
@@ -406,11 +401,9 @@ int condition_statement() {
         token = scan();
         if (statement() == ERROR) return ERROR;
 
-        /* 同様にstatement()が偽の場合の文のコードを生成してくれると仮定できる */
         fprintf(output, "L%04d", label2);
 
     } else {
-        /* elseがないときはラベルL0001を生成するだけで良い */
         fprintf(output, "L%04d", label1);
     }
     return NORMAL;
@@ -471,7 +464,9 @@ int call_statement() {
     if (token == TLPAREN) {
         no_arg = 0;
         token = scan();
+        iscallpara = 1;
         if (expressions() == ERROR) return ERROR;
+        iscallpara = 0;
         if (token != TRPAREN) return error("Symbol ')' is not found");
         token = scan();
     }
@@ -512,7 +507,7 @@ int expressions() {
             fprintf(output, "\tPUSH\t0,gr1\n");
         } else {
             fprintf(output, "\tLAD\tgr2,L%04d\n\tST\tgr1,0,gr2\n\tPUSH\t0,gr2\n", label);
-            // register_strlb("");
+            register_strlb("");
         }
     }
     if (f_para->nextparap != NULL) return error("Number of procedure arguments do not match");
@@ -746,7 +741,7 @@ int factor() {
     switch (token) {
         case TNAME:
             if ((type = variable()) == ERROR) return ERROR;
-            if (!(ispara && (token == TCOMMA || token == TRPAREN) && !is_opr)) {
+            if (!(iscallpara && (token == TCOMMA || token == TRPAREN) && !is_opr)) {
                 fprintf(output, "\tLD\tgr1,0,gr1\n");
             }
             break;
@@ -915,6 +910,7 @@ int input_statement() {
     token = scan();
     if (token == TLPAREN) {
         token = scan();
+        iscallpara = 1;
         if ((type = variable()) == ERROR) return ERROR;
         if (!(type == TPINT || type == TPCHAR))
             return error("Type of variable of input statement must be integer or char");
@@ -935,6 +931,7 @@ int input_statement() {
             return error("Keyword ')' is not found");
         if (is_readln) fprintf(output, "\tCALL\tREADLINE\n");
         token = scan();
+        iscallpara = 0;
     }
     return NORMAL;
 }
@@ -948,6 +945,7 @@ int output_statement() {
         return error("Keyword 'write' or 'writeln' is not found");
     token = scan();
     if (token == TLPAREN) {
+        iscallpara = 1;
         token = scan();
         if (output_format() == ERROR) return ERROR;
         while (token == TCOMMA) {
@@ -957,6 +955,7 @@ int output_statement() {
         if (token != TRPAREN)
             return error("Symbol ')' is not found");
         token = scan();
+        iscallpara = 0;
     }
     if (is_writeln) {
         fprintf(output, "\tCALL\tWRITELINE\n");
