@@ -89,6 +89,11 @@ int token_to_ttype(int token);
 
 int is_standard_type(int type);
 
+// 出力ファイル書き込み
+void writeln(char *str) {
+    fprintf(output, "%s\n", str);
+}
+
 /* プログラム */
 int parse_program() {
     if (token != TPROGRAM) return (error("Keyword 'program' is not found"));
@@ -346,12 +351,34 @@ int condition_statement() {
     token = scan();
     if ((type = expression()) == ERROR) return ERROR;
     if(type != TPBOOL) return error("Conditional expression of condition statement must be boolean");
+
+    /* expression()が条件式のコードを生成してくれていると仮定できるので */
+    /* 新たなラベルL0001を確保して以下を生成 */
+    writeln("\tPOP gr1");
+    writeln("\tCPA gr1,gr0");
+    writeln("\tJZE L0001");
+
     if (token != TTHEN) return error("Keyword 'then' is not found");
     token = scan();
     if (statement() == ERROR) return ERROR;
+
+    /* 同様にstatement()が真の場合の文のコードを生成してくれると仮定できる */
+
     if (token == TELSE) {
+
+        /* 新たなラベルL0002を確保して以下を生成 */
+        writeln("\tJUMP L0002");
+        writeln("L0001");
+
         token = scan();
         if (statement() == ERROR) return ERROR;
+
+        /* 同様にstatement()が偽の場合の文のコードを生成してくれると仮定できる */
+        writeln("L0002");
+
+    } else {
+        /* elseがないときはラベルL0001を生成するだけで良い */
+        writeln("L0001");
     }
     return NORMAL;
 }

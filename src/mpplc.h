@@ -140,8 +140,9 @@ extern int register_reflinenum(char *name, char *procname, int reflinenum);
 extern void register_procedure_parameter(char *procname);
 extern void print_idtab();
 
-/* string of each token */
+/* main.c */
 extern char *tokenstr[NUMOFTOKEN + 1];
 extern char *ttypestr[NUMOFTTYPE + 1];
+extern FILE *output;
 
 #endif //SOFTWARE5_EX2_PP_H
