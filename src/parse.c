@@ -741,6 +741,7 @@ int factor() {
     switch (token) {
         case TNAME:
             if ((type = variable()) == ERROR) return ERROR;
+            // TODO: to fix
             if (!(iscallpara && (token == TCOMMA || token == TRPAREN) && !is_opr)) {
                 fprintf(output, "\tLD\tgr1,0,gr1\n");
             }

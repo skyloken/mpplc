@@ -219,6 +219,7 @@ int register_reflinenum(char *name, char *procname, int reflinenum) {
         }
         if (p_tmp->itp->ttype != TPPROC) {
             fprintf(output, "\t");
+            // TODO: LAD or LD ? to fix
             if (!is_local || !(p_tmp->ispara)) {
                 fprintf(output, "LAD");
             } else {

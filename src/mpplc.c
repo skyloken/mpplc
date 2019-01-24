@@ -17,8 +17,8 @@ char *ttypestr[NUMOFTTYPE + 1] = {
 
 FILE *output;
 
-int init_output() {
-    output = fopen("foo.csl", "w");
+int init_output(char *filename) {
+    output = fopen(strcat(filename, ".csl"), "w");
     if (output == NULL) {
         return -1;
     } else {
@@ -40,7 +40,7 @@ int main(int nc, char *np[]) {
     }
 
     // 出力ファイル初期化
-    if (init_output() < 0) {
+    if (init_output(strtok(np[1], ".")) < 0) {
         printf("Output file can not open.\n");
         return 0;
     }
