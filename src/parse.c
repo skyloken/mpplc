@@ -492,7 +492,7 @@ int expressions() {
         fprintf(output, "\tPUSH\t0,gr1\n");
     } else {
         fprintf(output, "\tLAD\tgr2,L%04d\n\tST\tgr1,0,gr2\n\tPUSH\t0,gr2\n", label);
-        register_strlb("");
+        register_strlabel("");
     }
 
     while (token == TCOMMA) {
@@ -508,7 +508,7 @@ int expressions() {
             fprintf(output, "\tPUSH\t0,gr1\n");
         } else {
             fprintf(output, "\tLAD\tgr2,L%04d\n\tST\tgr1,0,gr2\n\tPUSH\t0,gr2\n", label);
-            register_strlb("");
+            register_strlabel("");
         }
     }
     if (f_para->nextparap != NULL) return error("Number of procedure arguments do not match");
@@ -955,7 +955,7 @@ int output_format() {
     int type;
     if (token == TSTRING && strlen(string_attr) > 1) {
         fprintf(output, "\tLAD\tgr1,L%04d\n\tLD\tgr2,gr0\n\tCALL\tWRITESTR\n", label);
-        register_strlb(string_attr);
+        register_strlabel(string_attr);
         token = scan();
     } else {
         /* 文字列の長さが1の場合は式から生成される定数の一つである"文字列"とする. */

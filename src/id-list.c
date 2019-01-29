@@ -342,11 +342,11 @@ void print_idtab() {
 }
 
 /* Register string and label */
-void register_strlb(char *string) {
+void register_strlabel(char *string) {
     struct STRLABEL *p, *q;
 
     if ((p = (struct STRLABEL *) malloc(sizeof(struct STRLABEL))) == NULL) {
-        printf("can not malloc in register_strlb\n");
+        printf("can not malloc in register_strlabel\n");
         exit(0);
     }
     p->label = label++;

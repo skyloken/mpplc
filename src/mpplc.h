@@ -2,10 +2,10 @@
 // Created by ken on 2018/11/08.
 //
 
-#ifndef SOFTWARE5_EX2_PP_H
-#define SOFTWARE5_EX2_PP_H
+#ifndef SOFTWARE5_EX4_MPPLC_H
+#define SOFTWARE5_EX4_MPPLC_H
 
-/* pp.h  */
+/* mpplc.h  */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -78,10 +78,9 @@
 
 #define NUMOFTOKEN    49
 
-/* cr.c */
-
 #define KEYWORDSIZE    28
 
+/* Data Structure */
 extern struct KEY {
     char *keyword;
     int keytoken;
@@ -122,6 +121,7 @@ struct STRLABEL {
     struct STRLABEL *nextp;
 };
 
+/* mpplc.c */
 extern int error(char *mes);
 
 extern void error_and_exit(char *mes, int linenum);
@@ -164,7 +164,7 @@ extern struct PARA *get_procedure_parameter(char *procname);
 
 extern void print_idtab();
 
-extern void register_strlb(char *string);
+extern void register_strlabel(char *string);
 
 extern void output_strlabel();
 
@@ -214,4 +214,4 @@ extern FILE *output;
 #define CASLII_IBUF "IBUF\tDS\t257\n"
 #define CASLII_RPBBUF "RPBBUF\tDC\t0\n"
 
-#endif //SOFTWARE5_EX2_PP_H
+#endif //SOFTWARE5_EX4_MPPLC_H
