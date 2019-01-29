@@ -374,7 +374,7 @@ void output_strlabel() {
     }
 }
 
-/* Output CASL-II library */
+/* Output CASLII library */
 void output_library(void) {
     fprintf(output, CASLII_EOVF);
     fprintf(output, CASLII_EOVF1);

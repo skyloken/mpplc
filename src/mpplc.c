@@ -51,9 +51,8 @@ int main(int nc, char *np[]) {
     token = scan();
     if (parse_program() == ERROR) {
         printf("line: %d\n", get_linenum());
-    } else {
-        print_idtab();
     }
+    printf("CASLII code was generated.\n");
     end_scan();
     fclose(output);
 
