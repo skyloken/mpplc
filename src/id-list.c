@@ -1,12 +1,12 @@
 ﻿#include "mpplc.h"
 
 struct ID *idroot; /* Pointers to root of global & local symbol tables */
-struct STRLB *strlbroot;
+struct STRLABEL *strlabelroot;
 
 /* Initialise the table */
 void init_idtab() {
     idroot = NULL;
-    strlbroot = NULL;
+    strlabelroot = NULL;
 }
 
 /* 参照行を末尾に追加 */
@@ -219,11 +219,11 @@ int register_reflinenum(char *name, char *procname, int reflinenum) {
         }
         if (p_tmp->itp->ttype != TPPROC) {
             fprintf(output, "\t");
-            // TODO: LAD or LD ? to fix
-            if (!is_local || !(p_tmp->ispara)) {
-                fprintf(output, "LAD");
-            } else {
+            // 仮引数の場合LD，引数ではない普通の変数の場合LAD
+            if (p_tmp->ispara) {
                 fprintf(output, "LD");
+            } else {
+                fprintf(output, "LAD");
             }
             fprintf(output, "\tgr1,$%s", p_tmp->name);
             if (p_tmp->procname != NULL) {
@@ -341,30 +341,31 @@ void print_idtab() {
     }
 }
 
-void register_strlb(char *string) {    /* Register string and its label */
-    struct STRLB *p, *q;
+/* Register string and label */
+void register_strlb(char *string) {
+    struct STRLABEL *p, *q;
 
-    if ((p = (struct STRLB *) malloc(sizeof(struct STRLB))) == NULL) {
+    if ((p = (struct STRLABEL *) malloc(sizeof(struct STRLABEL))) == NULL) {
         printf("can not malloc in register_strlb\n");
         exit(0);
     }
     p->label = label++;
     strcpy(p->string, string);
     p->nextp = NULL;
-    if (strlbroot == NULL) {
-        strlbroot = p;
+    if (strlabelroot == NULL) {
+        strlabelroot = p;
     } else {
-        for (q = strlbroot; q->nextp != NULL; q = q->nextp) {
-            // Nothing
+        for (q = strlabelroot; q->nextp != NULL; q = q->nextp) {
         }
         q->nextp = p;
     }
 }
 
-void output_strlb() {    /* Output registerd string and its label (Output DC-statement) */
-    struct STRLB *p;
+/* Output registerd string and label */
+void output_strlabel() {
+    struct STRLABEL *p;
 
-    for (p = strlbroot; p != NULL; p = p->nextp) {
+    for (p = strlabelroot; p != NULL; p = p->nextp) {
         if (strlen(p->string) == 0) {
             fprintf(output, "L%04d\tDC\t0\n", p->label);
         } else {
@@ -373,7 +374,8 @@ void output_strlb() {    /* Output registerd string and its label (Output DC-sta
     }
 }
 
-void output_library(void) {    /* Output library for CASLII */
+/* Output CASL-II library */
+void output_library(void) {
     fprintf(output, CASLII_EOVF);
     fprintf(output, CASLII_EOVF1);
     fprintf(output, CASLII_E0DIV);

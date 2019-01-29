@@ -94,6 +94,8 @@ int token_to_ttype(int token);
 
 int is_standard_type(int type);
 
+void reverse_show_parameter(struct PARA *);
+
 /* プログラム */
 int parse_program() {
 
@@ -113,7 +115,7 @@ int parse_program() {
     if (block() == ERROR) return (ERROR);
     if (token != TDOT) return (error("Period is not found at the end of program"));
     token = scan();
-    output_strlb();
+    output_strlabel();
     output_library();
     fprintf(output, "\tEND\n");
     return (NORMAL);
@@ -257,9 +259,8 @@ int subprogram_declaration() {
     struct PARA *p = get_procedure_parameter(procname);
     if (p != NULL) {
         fprintf(output, "\tPOP\tgr2\n");
-        for (; p != NULL; p = p->nextparap) {
-            fprintf(output, "\tPOP\tgr1\n\tST\tgr1,$%s%%%s\n", p->name, procname);
-        }
+        // 逆順に引数を出力
+        reverse_show_parameter(p);
         fprintf(output, "\tPUSH\t0,gr2\n");
     }
 
@@ -634,7 +635,6 @@ int expression() {
                 label = label + 2;
                 break;
             default:
-                // not reachable
                 exit(EXIT_FAILURE);
         }
     }
@@ -741,8 +741,7 @@ int factor() {
     switch (token) {
         case TNAME:
             if ((type = variable()) == ERROR) return ERROR;
-            // TODO: to fix
-            if (!(iscallpara && (token == TCOMMA || token == TRPAREN) && !is_opr)) {
+            if (!((ispara || iscallpara) && (token == TCOMMA || token == TRPAREN) && !is_opr)) {
                 fprintf(output, "\tLD\tgr1,0,gr1\n");
             }
             break;
@@ -784,7 +783,6 @@ int factor() {
                 case TPINT:
                     switch (type) {
                         case TPINT:
-                            // Nothing
                             break;
                         case TPCHAR:
                             fprintf(output, "\tLAD\tgr2,127\n\tAND\tgr1,gr2\n");
@@ -794,45 +792,37 @@ int factor() {
                             label++;
                             break;
                         default:
-                            // not-reach
                             exit(EXIT_FAILURE);
                     }
                     break;
                 case TPCHAR:
                     switch (type) {
                         case TPINT:
-                            // Nothing
                             break;
                         case TPCHAR:
-                            // Nothing
                             break;
                         case TPBOOL:
                             fprintf(output, "\tCPA\tgr1,gr0\n\tJZE\tL%04d\n\tLAD\tgr1,1\nL%04d\n", label, label);
                             label++;
                             break;
                         default:
-                            // not-reach
                             exit(EXIT_FAILURE);
                     }
                     break;
                 case TPBOOL:
                     switch (type) {
                         case TPINT:
-                            // Nothing
                             break;
                         case TPCHAR:
                             fprintf(output, "\tLAD\tgr2,127\n\tAND\tgr1,gr2\n");
                             break;
                         case TPBOOL:
-                            // Nothing
                             break;
                         default:
-                            // not-reach
                             exit(EXIT_FAILURE);
                     }
                     break;
                 default:
-                    // not-reach
                     exit(EXIT_FAILURE);
             }
 
@@ -911,7 +901,6 @@ int input_statement() {
     token = scan();
     if (token == TLPAREN) {
         token = scan();
-        iscallpara = 1;
         if ((type = variable()) == ERROR) return ERROR;
         if (!(type == TPINT || type == TPCHAR))
             return error("Type of variable of input statement must be integer or char");
@@ -932,7 +921,6 @@ int input_statement() {
             return error("Keyword ')' is not found");
         if (is_readln) fprintf(output, "\tCALL\tREADLINE\n");
         token = scan();
-        iscallpara = 0;
     }
     return NORMAL;
 }
@@ -946,7 +934,6 @@ int output_statement() {
         return error("Keyword 'write' or 'writeln' is not found");
     token = scan();
     if (token == TLPAREN) {
-        iscallpara = 1;
         token = scan();
         if (output_format() == ERROR) return ERROR;
         while (token == TCOMMA) {
@@ -956,7 +943,6 @@ int output_statement() {
         if (token != TRPAREN)
             return error("Symbol ')' is not found");
         token = scan();
-        iscallpara = 0;
     }
     if (is_writeln) {
         fprintf(output, "\tCALL\tWRITELINE\n");
@@ -994,7 +980,6 @@ int output_format() {
                 fprintf(output, "\tCALL\tWRITEBOOL\n");
                 break;
             default:
-                // not-reach
                 exit(EXIT_FAILURE);
         }
     }
@@ -1028,5 +1013,12 @@ int is_standard_type(int type) {
             return 1;
         default:
             return 0;
+    }
+}
+
+void reverse_show_parameter(struct PARA *p) {
+    if (p != NULL) {
+        reverse_show_parameter(p->nextparap);
+        fprintf(output, "\tPOP\tgr1\n\tST\tgr1,$%s%%%s\n", p->name, procname);
     }
 }

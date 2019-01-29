@@ -116,10 +116,10 @@ struct PARA {
     struct PARA *nextparap;
 };
 
-struct STRLB {
+struct STRLABEL {
     int label;
     char string[MAXSTRSIZE];
-    struct STRLB *nextp;
+    struct STRLABEL *nextp;
 };
 
 extern int error(char *mes);
@@ -166,7 +166,7 @@ extern void print_idtab();
 
 extern void register_strlb(char *string);
 
-extern void output_strlb();
+extern void output_strlabel();
 
 extern void output_library();
 
