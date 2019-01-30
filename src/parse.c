@@ -12,16 +12,17 @@ int linenum;
 int ttype;
 int array_size;
 int element_type;
+int ele_type;
+int label = 1;
+int break_label;
+
 int ispara = 0;
 int iscallpara = 0;
 int is_local = 0;
 int is_call = 0;
 int is_opr = 0;
-int ele_type;
-struct PARA *f_para;
 
-int label = 1;
-int break_label;
+struct PARA *f_para;
 
 /* プロトタイプ宣言 */
 int block();
@@ -332,7 +333,7 @@ int compound_statement() {
 
 /* 文 */
 int statement() {
-    int b_label;
+    int break_label_tmp;
 
     switch (token) {
         case TNAME:
@@ -342,9 +343,9 @@ int statement() {
             if (condition_statement() == ERROR) return ERROR;
             break;
         case TWHILE:
-            b_label = break_label;
+            break_label_tmp = break_label;
             if (iteration_statement() == ERROR) return ERROR;
-            break_label = b_label;
+            break_label = break_label_tmp;
             break;
         case TBREAK:
             if (exit_statement() == ERROR) return ERROR;
@@ -741,7 +742,7 @@ int factor() {
     switch (token) {
         case TNAME:
             if ((type = variable()) == ERROR) return ERROR;
-            if (!((ispara || iscallpara) && (token == TCOMMA || token == TRPAREN) && !is_opr)) {
+            if (!(!is_opr && (ispara || iscallpara) && (token == TCOMMA || token == TRPAREN))) {
                 fprintf(output, "\tLD\tgr1,0,gr1\n");
             }
             break;
