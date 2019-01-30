@@ -386,8 +386,8 @@ int condition_statement() {
     if (type != TPBOOL) return error("Conditional expression of condition statement must be boolean");
 
     label1 = label++;
-    fprintf(output, "\tCPA\tgr1,gr0");
-    fprintf(output, "\tJZE\tL%04d", label1);
+    fprintf(output, "\tCPA\tgr1,gr0\n");
+    fprintf(output, "\tJZE\tL%04d\n", label1);
 
     if (token != TTHEN) return error("Keyword 'then' is not found");
     token = scan();
@@ -396,16 +396,16 @@ int condition_statement() {
     if (token == TELSE) {
 
         label2 = label++;
-        fprintf(output, "\tJUMP\t%04d", label2);
-        fprintf(output, "L%04d", label1);
+        fprintf(output, "\tJUMP\t%04d\n", label2);
+        fprintf(output, "L%04d\n", label1);
 
         token = scan();
         if (statement() == ERROR) return ERROR;
 
-        fprintf(output, "L%04d", label2);
+        fprintf(output, "L%04d\n", label2);
 
     } else {
-        fprintf(output, "L%04d", label1);
+        fprintf(output, "L%04d\n", label1);
     }
     return NORMAL;
 }
