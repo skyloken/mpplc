@@ -856,7 +856,7 @@ int constant() {
             type = TPBOOL;
             break;
         case TSTRING:
-            if (strlen(string_attr) > 1) return error("Length of char type string must be 1");
+            if (strlen(string_attr) > 1) return error("Length of char type str must be 1");
             fprintf(output, "\tLAD\tgr1,%d\n", string_attr[0]);
             type = TPCHAR;
             break;

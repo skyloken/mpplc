@@ -1,6 +1,6 @@
 #include "mpplc.h"
 
-/* string of each token */
+/* str of each token */
 char *tokenstr[NUMOFTOKEN + 1] = {
         "",
         "NAME", "program", "var", "array", "of", "begin", "end", "if", "then",
@@ -10,7 +10,7 @@ char *tokenstr[NUMOFTOKEN + 1] = {
         ">=", "(", ")", "[", "]", ":=", ".", ",", ":", ";", "read", "write", "break"
 };
 
-/* string of each ttype */
+/* str of each ttype */
 char *ttypestr[NUMOFTTYPE + 1] = {
         "", "", "", "integer", "char", "boolean", "array", "procedure"
 };

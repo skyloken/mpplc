@@ -117,7 +117,7 @@ struct PARA {
 
 struct STRLABEL {
     int label;
-    char string[MAXSTRSIZE];
+    char str[MAXSTRSIZE];
     struct STRLABEL *nextp;
 };
 
@@ -162,9 +162,7 @@ extern void register_procedure_parameter(char *procname);
 
 extern struct PARA *get_procedure_parameter(char *procname);
 
-extern void print_idtab();
-
-extern void register_strlabel(char *string);
+extern void register_strlabel(char *str);
 
 extern void output_strlabel();
 

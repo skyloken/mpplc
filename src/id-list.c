@@ -285,72 +285,16 @@ struct PARA *get_procedure_parameter(char *procname) {
     return NULL;
 }
 
-/* Output the registered data */
-void print_idtab() {
-    struct ID *p;
-    struct LINE *l;
-    struct PARA *para;
-    char type_str[MAXSTRSIZE];
-    char name_str[MAXSTRSIZE];
-
-    printf("%-20s\t%-50s\t%s\t%s\n", "Name", "Type", "Def.", "Ref.");
-
-    while (!is_all_output()) {
-
-        p = search_dict_least();
-
-        // 出力フォーマット設定
-        if (p->itp->ttype == TPARRAY) {
-            sprintf(type_str, "array [%d] of %s", p->itp->arraysize, ttypestr[p->itp->element_type]);
-        } else {
-            strcpy(type_str, ttypestr[p->itp->ttype]);
-        }
-        if (p->procname == NULL) {
-            strcpy(name_str, p->name);
-        } else {
-            sprintf(name_str, "%s:%s", p->name, p->procname);
-        }
-        if (p->itp->ttype == TPPROC) {
-            strcpy(type_str, ttypestr[p->itp->ttype]);
-            if (p->iparap != NULL) {
-                strcat(type_str, "(");
-                for (para = p->iparap; para != NULL; para = para->nextparap) {
-                    strcat(type_str, ttypestr[para->ttype]);
-                    if (para->nextparap != NULL) {
-                        strcat(type_str, ", ");
-                    }
-                }
-                strcat(type_str, ")");
-            }
-        }
-
-        // 出力
-        printf("%-20s\t%-50s\t%d\t", name_str, type_str, p->deflinenum);
-        if (p->irefp != NULL) {
-            for (l = p->irefp; l != NULL; l = l->nextlinep) {
-                if (l->nextlinep != NULL) {
-                    printf("%d, ", l->reflinenum);
-                } else {
-                    printf("%d", l->reflinenum);
-                }
-            }
-        }
-        printf("\n");
-        p->is_output = 1;
-
-    }
-}
-
-/* Register string and label */
-void register_strlabel(char *string) {
+/* Register str and label */
+void register_strlabel(char *str) {
     struct STRLABEL *p, *q;
 
     if ((p = (struct STRLABEL *) malloc(sizeof(struct STRLABEL))) == NULL) {
         printf("can not malloc in register_strlabel\n");
-        exit(0);
+        return;
     }
     p->label = label++;
-    strcpy(p->string, string);
+    strcpy(p->str, str);
     p->nextp = NULL;
     if (strlabelroot == NULL) {
         strlabelroot = p;
@@ -361,21 +305,21 @@ void register_strlabel(char *string) {
     }
 }
 
-/* Output registerd string and label */
+/* Output registerd str and label */
 void output_strlabel() {
     struct STRLABEL *p;
 
     for (p = strlabelroot; p != NULL; p = p->nextp) {
-        if (strlen(p->string) == 0) {
+        if (strlen(p->str) == 0) {
             fprintf(output, "L%04d\tDC\t0\n", p->label);
         } else {
-            fprintf(output, "L%04d\tDC\t'%s'\n", p->label, p->string);
+            fprintf(output, "L%04d\tDC\t'%s'\n", p->label, p->str);
         }
     }
 }
 
 /* Output CASLII library */
-void output_library(void) {
+void output_library() {
     fprintf(output, CASLII_EOVF);
     fprintf(output, CASLII_EOVF1);
     fprintf(output, CASLII_E0DIV);
