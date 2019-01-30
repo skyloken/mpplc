@@ -492,7 +492,9 @@ int expressions() {
     if (first == TNAME && is_opr == 0) {
         fprintf(output, "\tPUSH\t0,gr1\n");
     } else {
-        fprintf(output, "\tLAD\tgr2,L%04d\n\tST\tgr1,0,gr2\n\tPUSH\t0,gr2\n", label);
+        fprintf(output, "\tLAD\tgr2,L%04d\n", label);
+        fprintf(output, "\tST\tgr1,0,gr2\n");
+        fprintf(output, "\tPUSH\t0,gr2\n");
         register_strlabel("");
     }
 
@@ -508,7 +510,9 @@ int expressions() {
         if (first == TNAME && is_opr == 0) {
             fprintf(output, "\tPUSH\t0,gr1\n");
         } else {
-            fprintf(output, "\tLAD\tgr2,L%04d\n\tST\tgr1,0,gr2\n\tPUSH\t0,gr2\n", label);
+            fprintf(output, "\tLAD\tgr2,L%04d\n", label);
+            fprintf(output, "\tST\tgr1,0,gr2\n");
+            fprintf(output, "\tPUSH\t0,gr2\n");
             register_strlabel("");
         }
     }
@@ -534,7 +538,8 @@ int assignment_statement() {
     if (type1 != type2) return error("Left part and expression type must be same type");
     if (!(is_standard_type(type1) && is_standard_type(type2)))
         return error("Left part and expression type must be standard type");
-    fprintf(output, "\tPOP\tgr2\n\tST\tgr1,0,gr2\n");
+    fprintf(output, "\tPOP\tgr2\n");
+    fprintf(output, "\tST\tgr1,0,gr2\n");
     return NORMAL;
 }
 
@@ -602,7 +607,8 @@ int expression() {
             return error("Operand of relational operator must be standard type");
         type = TPBOOL;
 
-        fprintf(output, "\tPOP\tgr2\n\tCPA\tgr2,gr1\n");
+        fprintf(output, "\tPOP\tgr2\n");
+        fprintf(output, "\tCPA\tgr2,gr1\n");
         switch (opr) {
             case TEQUAL:
                 fprintf(output, "\tJZE\tL%04d\n\tLD\tgr1,gr0\n\tJUMP\tL%04d\nL%04d\n\tLAD\tgr1,1\nL%04d\n", label,
@@ -709,13 +715,16 @@ int term() {
         fprintf(output, "\tPOP\tgr2\n");
         switch (opr) {
             case TSTAR:
-                fprintf(output, "\tMULA\tgr1,gr2\n\tJOV\tEOVF\n");
+                fprintf(output, "\tMULA\tgr1,gr2\n");
+                fprintf(output, "\tJOV\tEOVF\n");
                 break;
             case TAND:
                 fprintf(output, "\tAND\tgr1,gr2\n");
                 break;
             case TDIV:
-                fprintf(output, "\tDIVA\tgr2,gr1\n\tJOV\tE0DIV\n\tLD\tgr1,gr2\n");
+                fprintf(output, "\tDIVA\tgr2,gr1\n");
+                fprintf(output, "\tJOV\tE0DIV\n");
+                fprintf(output, "\tLD\tgr1,gr2\n");
                 break;
             default:
                 exit(EXIT_FAILURE);
@@ -764,8 +773,13 @@ int factor() {
             token = scan();
             if ((type = factor()) == ERROR) return ERROR;
             if (type != TPBOOL) return error("Operand type of 'not' must be boolean");
-            fprintf(output, "\tCPA\tgr1,gr0\n\tJZE\tL%04d\n\tLD\tgr1,gr0\n\tJUMP\tL%04d\nL%04d\n\tLAD\tgr1,1\nL%04d\n",
-                    label, label + 1, label, label + 1);
+            fprintf(output, "\tCPA\tgr1,gr0\n");
+            fprintf(output, "\tJZE\tL%04d\n", label);
+            fprintf(output, "\tLD\tgr1,gr0\n");
+            fprintf(output, "\tJUMP\tL%04d\n", label + 1);
+            fprintf(output, "L%04d\n", label);
+            fprintf(output, "\tLAD\tgr1,1\n");
+            fprintf(output, "L%04d\n", label + 1);
             label = label + 2;
             break;
         case TINTEGER:
