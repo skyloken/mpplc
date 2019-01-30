@@ -285,7 +285,7 @@ struct PARA *get_procedure_parameter(char *procname) {
     return NULL;
 }
 
-/* Register str and label */
+/* 文字列と対応ラベルを登録 */
 void register_strlabel(char *str) {
     struct STRLABEL *p, *q;
 
@@ -305,7 +305,7 @@ void register_strlabel(char *str) {
     }
 }
 
-/* Output registerd str and label */
+/* 文字列と対応ラベルを書き込み */
 void output_strlabel() {
     struct STRLABEL *p;
 
@@ -318,7 +318,7 @@ void output_strlabel() {
     }
 }
 
-/* Output CASLII library */
+/* CASLIIのライブラリ群を書き込み */
 void output_library() {
     fprintf(output, CASLII_EOVF);
     fprintf(output, CASLII_EOVF1);
