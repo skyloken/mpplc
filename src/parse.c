@@ -396,7 +396,7 @@ int condition_statement() {
     if (token == TELSE) {
 
         label2 = label++;
-        fprintf(output, "\tJUMP\t%04d\n", label2);
+        fprintf(output, "\tJUMP\tL%04d\n", label2);
         fprintf(output, "L%04d\n", label1);
 
         token = scan();
